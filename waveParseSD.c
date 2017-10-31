@@ -13,11 +13,14 @@ struct HEADER{
 };
 #include<stdio.h>
 #include<stdlib.h>
+#include<inttypes.h>
 #include<string.h>
+#include<math.h>
+#include<complex.h>
 
 struct HEADER readHeader(FILE *file);
 unsigned int LittleToBig(unsigned int x);
-void readData(int *data, struct HEADER header, FILE *file);
+void readData(int16_t *data, struct HEADER header, FILE *file);
 int convertBitSize(unsigned int in, int bps);
 
 int main(int argc, char **argv)
@@ -32,20 +35,35 @@ int main(int argc, char **argv)
 	FILE *input = fopen(argv[1],"r");
 	struct HEADER header = readHeader(input);
 	 
-	int *data = (int *) malloc(header.numSamples * sizeof(int));
+	int16_t *data = (int16_t *) malloc(header.numSamples * sizeof(int16_t));
+	double complex *dataDouble = (double complex *) malloc(header.numSamples*sizeof(double complex));
 	readData(data, header, input);	
 	unsigned int i;
-	printf("%d",header.bitsPerSample);
-	for(i=0;i<10;i++)
-	{
-	printf("%d\n",LittleToBig(data[i]));	
-	printf("%02x\n",data[i]);
+	printf("%d\n",header.bitsPerSample);
+	int j =0;
+	for(i=0;i<20/2;i=i+2){
+		int16_t buffer = (data[i]|(data[i+1]<<8));
+		if((double)buffer < 0 ){
+			dataDouble[j] = (double complex) buffer /32768.0;
+		} else {
+			dataDouble[j] = (double complex) buffer /32767.0;
+		}
+		dataDouble[j] = (double complex) buffer /32768.0;
+	printf("%i \n",buffer);	
+	
+	printf("%f +i%f\n",creal(dataDouble[j]),cimag(dataDouble[j]));
+	j++;
+	//printf("%08x\n",(data[i]|(data[i+1]<<8)));
+	
+	
+	
+	
 	}
 
 
 }
 
-void readData(int *data, struct HEADER header,FILE *file){
+void readData(int16_t *data, struct HEADER header,FILE *file){
 	int buffer;
 	int i, j;
 	for(i=0;i<header.numSamples;i++){
@@ -55,6 +73,7 @@ void readData(int *data, struct HEADER header,FILE *file){
 		
 
 			data[i] =buffer;
+			
 	}
 }
 	
